@@ -1,21 +1,14 @@
-use ark_bn254::{Bn254, Fq12Parameters, Fq2Parameters, Fr, G1Affine};
-use ark_ec::bn::{BnParameters, G1Prepared, G2Prepared, TwistType};
-use ark_ff::{to_bytes, Field, Fp12, Fp12ParamsWrapper, Fp2, QuadExtField};
+use ark_bn254::{Bn254, Fr};
+use ark_ff::Field;
 use ark_groth16::{
-    create_random_proof, generate_random_parameters, prepare_inputs,
-    prepare_verifying_key, verify_proof,
+    create_random_proof, generate_random_parameters, prepare_verifying_key, verify_proof,
 };
 use ark_relations::{
-    lc, ns,
+    lc,
     r1cs::{ConstraintSynthesizer, ConstraintSystemRef, SynthesisError, Variable},
 };
-use ark_std::rand::{rngs::StdRng, Rng, SeedableRng};
-
 use ark_serialize::CanonicalSerialize;
-
-use ark_relations::r1cs::Result as R1CSResult;
-use ark_std::rand;
-use num_traits::One;
+use ark_std::rand::{rngs::StdRng, SeedableRng};
 
 // a + b = c
 // a, b are private
@@ -27,18 +20,12 @@ pub struct Circuit<F: Field> {
 }
 
 impl<F: Field> ConstraintSynthesizer<F> for Circuit<F> {
-    fn generate_constraints(
-        self,
-        cs: ConstraintSystemRef<F>,
-    ) -> Result<(), SynthesisError> {
-        let a =
-            cs.new_witness_variable(|| self.a.ok_or(SynthesisError::AssignmentMissing))?;
+    fn generate_constraints(self, cs: ConstraintSystemRef<F>) -> Result<(), SynthesisError> {
+        let a = cs.new_witness_variable(|| self.a.ok_or(SynthesisError::AssignmentMissing))?;
 
-        let b =
-            cs.new_witness_variable(|| self.b.ok_or(SynthesisError::AssignmentMissing))?;
+        let b = cs.new_witness_variable(|| self.b.ok_or(SynthesisError::AssignmentMissing))?;
 
-        let c =
-            cs.new_input_variable(|| self.c.ok_or(SynthesisError::AssignmentMissing))?;
+        let c = cs.new_input_variable(|| self.c.ok_or(SynthesisError::AssignmentMissing))?;
 
         cs.enforce_constraint(lc!() + a + b, lc!() + Variable::One, lc!() + c)?;
 
@@ -70,9 +57,9 @@ fn main() {
 
     let proof = create_random_proof(assigment, &pk, rng).unwrap();
 
-    // let mut proof_vec = Vec::new();
-    // proof.serialize(&mut proof_vec).unwrap();
-    // println!("proof_vec: {:?}", proof_vec);
+    let mut proof_vec = Vec::new();
+    proof.serialize(&mut proof_vec).unwrap();
+    println!("proof_vec: {:?}", proof_vec);
 
     let vk = prepare_verifying_key(&pk.vk);
 
